@@ -1,3 +1,3 @@
 print('Hellow World')
-word = 'MyPythonHelloSergei'
+word = 'MyPythonHelloSergei!'
 print(word[8:])
