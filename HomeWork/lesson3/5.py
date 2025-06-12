@@ -19,4 +19,3 @@ print(hrs, mins, secs, sep=":")
 # На форматную строку и написать так:
 # time_f = "{:02d}:{:02d}:{:02d}".format(hrs, mins, secs)
 # print(time_f)
-
