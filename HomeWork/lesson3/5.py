@@ -9,7 +9,7 @@ secs = a % 60
 
 print(f"Вы ввели {your_sec} секунд, в переводе на часы это:\n"
       f"{hrs:02d}:{mins:02d}:{secs:02d}\n"
-      )
+)
 
 print(hrs, mins, secs, sep=":")
 
