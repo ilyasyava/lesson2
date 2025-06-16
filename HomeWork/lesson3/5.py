@@ -3,9 +3,9 @@ your_sec = int(input("Введите количество секунд: "))
 a = your_sec
 
 hrs = a // 3600
-a %= 3600
-mins = a // 60
-secs = a % 60
+a_new %= 3600
+mins = a_new // 60
+secs = a_new % 60
 
 print(f"Вы ввели {your_sec} секунд, в переводе на часы это:\n"
       f"{hrs:02d}:{mins:02d}:{secs:02d}\n"
