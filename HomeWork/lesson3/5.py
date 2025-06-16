@@ -3,7 +3,7 @@ your_sec = int(input("Введите количество секунд: "))
 a = your_sec
 
 hrs = a // 3600
-a_new %= 3600
+a_new = a % 3600
 mins = a_new // 60
 secs = a_new % 60
 
