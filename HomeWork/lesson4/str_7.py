@@ -5,7 +5,6 @@
 #     5678 -> 5 678
 #
 #     (решить без for)
-from dataclasses import replace
 
 num = int(input("Введите ваше число: "))
 num_sp = format(num, ",")
