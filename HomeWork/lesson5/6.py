@@ -28,5 +28,6 @@ all_n_3 = sorted(
 
 print(f"{all_n_1}\n"
       f"{all_n_2}\n"
-      f"{all_n_3}")
+      f"{all_n_3}"
+)
 
