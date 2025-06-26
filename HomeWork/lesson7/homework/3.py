@@ -3,3 +3,9 @@
 # у которой номер в алфавите равен этой цифре.
 # Например: 1352=aceb.
 # '''
+alphab = ord("a") - 1
+
+nums = input("Введите число: ")
+
+for el in nums:
+    print(chr(int(el) + alphab), end="")
