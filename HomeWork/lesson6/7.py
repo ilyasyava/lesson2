@@ -8,7 +8,7 @@
 from pyowm import OWM
 from pprint import pprint
 
-owm = OWM("cfeff9fdf03f7360dc2663779f39193f")
+owm = OWM('35H66m16854R3vz3w27gqVVeygbPmMPWXt')
 mgr = owm.weather_manager()
 
 city = input("Введите название город: ")
