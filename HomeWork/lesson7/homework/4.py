@@ -11,4 +11,22 @@
 #
 # * - елочка со снегом
 # '''
+while True:
+    try:
+        high = int(input("Введите высоту ёлочки от 3 до 20: "))
+    except ValueError:
+        print("Вы ввели не число")
+        continue
+    if high < 3 or high > 20:
+        print("Неверная высота")
+    else:
+        for i in range(0, high + 1):
+            stars = "*" * (2 * i - 1)
+            sp = " " * (high - i)
+            print(sp + stars)
+        break
+print(" " * (high - 1) + 'u')
+
+#Со снегом не стал заморачиваться, сделал ножку)))
+
 

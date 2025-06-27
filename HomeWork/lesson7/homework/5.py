@@ -14,3 +14,9 @@
 #
 #
 # '''
+lis = ['qwertyu','asdfggh','zxcvbnm','yuiop[]','hjklasd','mnbvnbv']
+
+for i, j in enumerate(lis, 1):
+    for q in j:
+        q = j[i - 1]
+    print(f"{i} - {j} - {q}")

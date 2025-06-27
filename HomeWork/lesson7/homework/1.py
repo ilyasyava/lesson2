@@ -18,9 +18,7 @@ while True:
     except ValueError:
         print("Введите число!")
 
-avg = sum(mks) / len(mks)
-
-print(f"Средняя оценка ученика: {avg:.2f}")
+print(f"Средняя оценка ученика: {sum(mks) / len(mks):.2f}")
 
 
 

@@ -7,16 +7,14 @@
 #     -распечатать отдельно отзывы
 #
 # """
-from soupsieve.util import lower
-
 feedback_dict = {}
 
 while True:
     fb_n = input("Введите ваше имя: ")
-    if lower(fb_n) == "stop":
+    if fb_n.lower() == "stop":
         break
     fb = input("Введите ваш отзыв: ")
-    if lower(fb) == "stop":
+    if fb.lower() == "stop":
         break
     feedback_dict[fb_n] = fb
 
@@ -33,6 +31,7 @@ print(f"{'Статистика':-^40}\n"
 # print("Имена:")
 # for i in feedback_dict.keys():
 #     print(f"    -{i}")
+
 # print("Отзывы:")
 # for j in feedback_dict.values():
 #     print(f"    -{j}")

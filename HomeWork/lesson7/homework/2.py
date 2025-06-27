@@ -6,18 +6,16 @@
 # Например: Привет как дела => Прриииввввееееетттттт кааккк деелллаааа
 # '''
 
-txt = input("Введите фразу, состоящую минимум из 3-х слов: ")
+txt = input("Введите фразу, состоящую минимум из 3-х слов: ").split()
 
-words = txt.split()
-
-if len(words) < 3:
+if len(txt) < 3:
     print("Введите фразу, минимум из 3-х слов!")
 else:
     res = []
-    for word in words:
-        trf = ''
-        for i, j in enumerate(word, start = 1):
-            trf += j * i
-        res.append(trf)
+    for word in txt:
+        test = ''
+        for i, j in enumerate(word, 1):
+            test += j * i
+        res.append(test)
 
 print("Новая фраза: ", " ".join(res))
