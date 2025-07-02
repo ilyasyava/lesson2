@@ -5,3 +5,19 @@
 # Затем создайте вторую функцию, которая принимает этот словарь,
 # и выводит его содержимое в удобном и красивом формате.
 # """
+def text_sp(text: str) -> dict:
+    return {
+        'Символы' : len(text),
+        'Слова' : len(text.split()),
+        'Строки' : len(text.split("\n")),
+        'Предложения' : len(text.split('. '))
+    }
+
+def result(my_dict):
+    print("\n".join(f"{k:} -> {v}" for k, v in my_dict.items()))
+
+text = '''Привет. Меня зовут Python
+Я готов помочь тебе разобраться с этим заданием'''
+
+my_txt = text_sp(text)
+result(my_txt)
