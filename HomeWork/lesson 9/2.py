@@ -7,8 +7,12 @@ def factorial(n):
         return 1
     else:
         return n * factorial(n - 1)
-
-num = int(input("Введите число, для проверки факториала: "))
+while True:
+    try:
+        num = int(input("Введите число, для проверки факториала: "))
+        break
+    except ValueError:
+        print("\nВы ввели не число или ввели не корректно!\n")
 print(f"{num}! ==> {factorial(num)}")
 
 

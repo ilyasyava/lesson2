@@ -12,7 +12,7 @@ def print_n(txt):
     print(txt)
     print_n(txt)
     return
-txt = "hello mafaka"
+txt = "hello python"
 print_n(txt)
 
 #Вот ещё вариант есть, где сам решаешь, сколько раз будет выполнена функция
