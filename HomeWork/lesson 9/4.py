@@ -8,4 +8,16 @@
 #             нечетным - умножить на 3
 # Использовать map и lambda.
 # '''
+lst = [1,2,3,4,5,6,7,8,9]
 
+copy_1 = lst[:]
+copy_2 = lst[:]
+copy_3 = lst[:]
+
+res_1 = list(map(lambda x: x ** 2, copy_1))
+res_2 = list(map(lambda x: x + 3 if x %2 == 0 else x, copy_2))
+res_3 = list(map(lambda x: x * 2 if x %2 ==0 else x * 3, copy_3))
+
+print("Квадраты: ", res_1)
+print("Чётные +3: ", res_2)
+print("Чётные *2, нечётные *3: ", res_3)
