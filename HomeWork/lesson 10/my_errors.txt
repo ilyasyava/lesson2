@@ -1,0 +1,2 @@
+Ошибка в функции divide: division by zero
+Ошибка в функции divide: division by zero

@@ -22,16 +22,16 @@ class Phone:
     def __init__(self, brand: str, model: str, year: int):
         self.brand = brand
         self.model = model
-        self.issue_year = year
+        self.year = year
 
     def receive_call(self, name: str):
         print(f"{self.brand}-{self.model} - Звонит {name}")
 
     def get_info(self):
-        return (self.brand, self.model, self.issue_year)
+        return (self.brand, self.model, self.year)
 
     def __str__(self):
-        return f"Бренд: {self.brand}\nМодель: {self.model}\nГод выпуска: {self.issue_year}"
+        return f"Бренд: {self.brand}\nМодель: {self.model}\nГод выпуска: {self.year}"
 
 
 phone1 = Phone("iPhone", "15 Pro", 2023)
