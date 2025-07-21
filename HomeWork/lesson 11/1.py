@@ -34,7 +34,7 @@ class Phone:
         return f"Бренд: {self.brand}\nМодель: {self.model}\nГод выпуска: {self.year}"
 
 
-phone1 = Phone("iPhone", "15 Pro", 2023)
+phone1 = Phone("iPhone", "15 Pro", 2024)
 phone2 = Phone("Samsung", "Galaxy S24", 2024)
 
 phone1.receive_call("Анна\n")
