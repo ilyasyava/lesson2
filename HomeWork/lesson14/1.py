@@ -24,17 +24,13 @@
 # """
 import sqlite3
 import re
-import random
-import string
 from datetime import datetime, timedelta
 
-DB_NAME = "users.db"
-
+DB_NAME = "users_.db"
 
 def init_db():
     with sqlite3.connect(DB_NAME) as conn:
         cursor = conn.cursor()
-
         cursor.execute("""
         CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -44,9 +40,7 @@ def init_db():
             is_blocked INTEGER,
             subscription_date TEXT,
             subscription_mode TEXT
-        )
-        """)
-
+        )""")
         cursor.execute("""
         CREATE TABLE IF NOT EXISTS services (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -54,9 +48,7 @@ def init_db():
             type INTEGER,
             cost REAL,
             period_days INTEGER
-        )
-        """)
-
+        )""")
         cursor.execute("""
         CREATE TABLE IF NOT EXISTS user_services (
             user_id INTEGER,
@@ -65,29 +57,83 @@ def init_db():
             end_date TEXT,
             FOREIGN KEY(user_id) REFERENCES users(id),
             FOREIGN KEY(service_id) REFERENCES services(id)
-        )
-        """)
+        )""")
 
 
 class User:
-    def __init__(self, name, login, password=None):
-        self.name = self._validate_name(name)
-        self.login = self._validate_login(login)
-        self.password = self._validate_or_generate(password)
-        self.is_blocked = False
-        self.subscription_date = datetime.now() + timedelta(days=30)
-        self.subscription_mode = "free"
-        self.save()
+    def __init__(self, login):
+        self.login = login
+        self.load_from_db()
 
-    def _validate_name(self, name):
-        if not re.fullmatch(r'^[а-яА-ЯёЁ]+$', name):
-            raise ValueError("Имя должно быть только на русском языке!")
-        return name
+    def load_from_db(self):
+        with sqlite3.connect(DB_NAME) as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT * FROM users WHERE login=?", (self.login,))
+            data = cursor.fetchone()
+            if not data:
+                raise Exception("Пользователь не найден.")
+            self.id, self.name, self.login, self.password, self.is_blocked, sub_date, self.subscription_mode = data
+            self.subscription_date = datetime.strptime(sub_date, "%Y-%m-%d")
 
-    def _validate_login(self, login):
-        if not re.fullmatch(r'^[a-zA-Z0-9_]{6,}$', login):
-            raise ValueError("Логин должен содержать не менее 6 символов: латинские буквы, цифры, _")
-        return login
+    def get_info(self):
+        print(f"\nИмя: {self.name}")
+        print(f"Логин: {self.login}")
+        print(f"Пароль: {'*' * len(self.password)}")
+        print(f"Подписка до: {self.subscription_date.date()}, режим: {self.subscription_mode}")
+        print(f"Статус: {'Заблокирован' if self.is_blocked else 'Активен'}")
+
+        with sqlite3.connect(DB_NAME) as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT s.name, s.type, s.cost, us.end_date FROM user_services us
+                JOIN services s ON s.id = us.service_id
+                WHERE us.user_id=?
+            """, (self.id,))
+            rows = cursor.fetchall()
+            if not rows:
+                print("Нет подключённых услуг.")
+            else:
+                print("Услуги:")
+                for row in rows:
+                    typ = "Платная" if row[1] else "Бесплатная"
+                    print(f"  - {row[0]} ({typ}, {row[2]} руб.) до {row[3]}")
+
+    def change_password(self):
+        new = input("Новый пароль: ")
+        if not self._is_valid_password(new):
+            print("Пароль должен содержать минимум 6 символов, 1 заглавную, 1 строчную и 1 цифру.")
+            return
+        with sqlite3.connect(DB_NAME) as conn:
+            conn.execute("UPDATE users SET password=? WHERE id=?", (new, self.id))
+        print("Пароль обновлён.")
+
+    def block_user(self, status=True):
+        with sqlite3.connect(DB_NAME) as conn:
+            conn.execute("UPDATE users SET is_blocked=? WHERE id=?", (int(status), self.id))
+        self.is_blocked = status
+        print("Пользователь заблокирован." if status else "Пользователь разблокирован.")
+
+    def add_service(self, service_id):
+        now = datetime.now()
+        with sqlite3.connect(DB_NAME) as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT period_days FROM services WHERE id=?", (service_id,))
+            res = cursor.fetchone()
+            if not res:
+                print("Услуга не найдена.")
+                return
+            period = res[0]
+            end_date = now + timedelta(days=period)
+            cursor.execute("""
+                INSERT INTO user_services (user_id, service_id, start_date, end_date)
+                VALUES (?, ?, ?, ?)
+            """, (self.id, service_id, now.strftime('%Y-%m-%d'), end_date.strftime('%Y-%m-%d')))
+            print("Услуга подключена.")
+
+    def remove_service(self, service_id):
+        with sqlite3.connect(DB_NAME) as conn:
+            conn.execute("DELETE FROM user_services WHERE user_id=? AND service_id=?", (self.id, service_id))
+        print("Услуга удалена.")
 
     def _is_valid_password(self, password):
         return (len(password) >= 6 and
@@ -95,177 +141,107 @@ class User:
                 re.search(r'[A-Z]', password) and
                 re.search(r'\d', password))
 
-    def _generate_password(self):
-        while True:
-            pwd = ''.join(random.choices(string.ascii_letters + string.digits, k=8))
-            if self._is_valid_password(pwd):
-                return pwd
 
-    def _validate_or_generate(self, password):
-        if password:
-            if not self._is_valid_password(password):
-                raise ValueError("Пароль не соответствует требованиям")
-            return password
-        pwd = self._generate_password()
-        print(f"Сгенерированный пароль: {pwd}")
-        return pwd
+def create_test_data():
+    with sqlite3.connect(DB_NAME) as conn:
+        cursor = conn.cursor()
 
-    def save(self):
-        with sqlite3.connect(DB_NAME) as conn:
-            cursor = conn.cursor()
-            cursor.execute("""
-            INSERT OR REPLACE INTO users (name, login, password, is_blocked, subscription_date, subscription_mode)
-            VALUES (?, ?, ?, ?, ?, ?)
-            """, (self.name, self.login, self.password, int(self.is_blocked),
-                  self.subscription_date.strftime('%Y-%m-%d'), self.subscription_mode))
-            conn.commit()
-
-    def add_service(self, service_id):
-        now = datetime.now()
-        with sqlite3.connect(DB_NAME) as conn:
-            cursor = conn.cursor()
-            cursor.execute("SELECT period_days FROM services WHERE id=?", (service_id,))
-            result = cursor.fetchone()
-            if not result:
-                print("Услуга не найдена")
-                return
-            period_days = result[0]
-            end_date = now + timedelta(days=period_days)
-            cursor.execute("SELECT id FROM users WHERE login=?", (self.login,))
-            user_id = cursor.fetchone()[0]
-            cursor.execute("""
-                INSERT INTO user_services (user_id, service_id, start_date, end_date)
-                VALUES (?, ?, ?, ?)
-            """, (user_id, service_id, now.strftime('%Y-%m-%d'), end_date.strftime('%Y-%m-%d')))
-            conn.commit()
-
-    def extend_service(self, service_id):
-        now = datetime.now().date()
-        with sqlite3.connect(DB_NAME) as conn:
-            cursor = conn.cursor()
-            cursor.execute("SELECT period_days FROM services WHERE id=?", (service_id,))
-            result = cursor.fetchone()
-            if not result:
-                print("Услуга не найдена")
-                return
-            period_days = result[0]
-
-            cursor.execute("SELECT id FROM users WHERE login=?", (self.login,))
-            user_id = cursor.fetchone()[0]
-
-            cursor.execute("""
-                SELECT end_date FROM user_services 
-                WHERE user_id=? AND service_id=?
-            """, (user_id, service_id))
-            res = cursor.fetchone()
-
-            if res and datetime.strptime(res[0], "%Y-%m-%d").date() >= now:
-                new_end = datetime.strptime(res[0], "%Y-%m-%d") + timedelta(days=period_days)
+        cursor.execute("SELECT COUNT(*) FROM users")
+        if cursor.fetchone()[0] == 0:
+            users = [
+                ("Иванов", "ivan_123", "A1b2c3D", 0, "2025-08-30", "paid"),
+                ("Петров", "petr_2025", "B2c3d4E", 0, "2025-09-15", "free"),
+                ("Сидоров", "sidor_999", "C3d4e5F", 1, "2025-07-10", "paid"),
+            ]
+            for u in users:
                 cursor.execute("""
-                    UPDATE user_services SET end_date=?
-                    WHERE user_id=? AND service_id=?
-                """, (new_end.strftime('%Y-%m-%d'), user_id, service_id))
-            else:
-                self.add_service(service_id)
+                    INSERT INTO users (name, login, password, is_blocked, subscription_date, subscription_mode)
+                    VALUES (?, ?, ?, ?, ?, ?)
+                """, u)
 
-            conn.commit()
+        cursor.execute("SELECT COUNT(*) FROM services")
+        if cursor.fetchone()[0] == 0:
+            services = [
+                ("Антивирус", 1, 199.0, 30),
+                ("Облачное хранилище", 1, 99.0, 30),
+                ("Бесплатная поддержка", 0, 0.0, 60),
+            ]
+            for s in services:
+                cursor.execute("""
+                    INSERT INTO services (name, type, cost, period_days)
+                    VALUES (?, ?, ?, ?)
+                """, s)
 
-    def remove_service(self, service_id):
-        with sqlite3.connect(DB_NAME) as conn:
-            cursor = conn.cursor()
-            cursor.execute("SELECT id FROM users WHERE login=?", (self.login,))
-            user_id = cursor.fetchone()[0]
-            cursor.execute("""
-                DELETE FROM user_services WHERE user_id=? AND service_id=?
-            """, (user_id, service_id))
-            conn.commit()
+        conn.commit()
 
 
 def main_menu():
     while True:
         print("\nМеню:")
-        print("1 - Показать всех пользователей")
-        print("2 - Информация о пользователе")
-        print("3 - Список услуг")
-        print("4 - Пользователи с определённой услугой")
-        print("5 - Пользователи с истекшими услугами за месяц")
+        print("1 - Список пользователей")
+        print("2 - Работа с пользователем")
         print("0 - Выход")
 
-        choice = input("Выберите пункт: ")
-        if choice == "0":
-            break
-        elif choice == "1":
-            show_users()
-        elif choice == "2":
-            user_info()
-        elif choice == "3":
-            list_services()
-        elif choice == "4":
-            users_with_service()
-        elif choice == "5":
-            expired_services()
+        match input("Выбор: "):
+            case "1":
+                list_users()
+            case "2":
+                login = input("Введите логин пользователя: ")
+                try:
+                    user = User(login)
+                    user_menu(user)
+                except Exception as e:
+                    print(e)
+            case "0":
+                break
+            case _:
+                print("Неверный выбор.")
 
-
-def show_users():
+def list_users():
     with sqlite3.connect(DB_NAME) as conn:
-        cursor = conn.cursor()
-        for row in cursor.execute("SELECT id, name, login FROM users"):
+        for row in conn.execute("SELECT id, name, login FROM users"):
             print(f"{row[0]}. {row[1]} ({row[2]})")
 
-
-def user_info():
-    login = input("Введите логин пользователя: ")
+def list_all_services():
     with sqlite3.connect(DB_NAME) as conn:
-        cursor = conn.cursor()
-        cursor.execute("SELECT id, name, is_blocked, subscription_date, subscription_mode FROM users WHERE login=?", (login,))
-        user = cursor.fetchone()
-        if not user:
-            print("Пользователь не найден")
-            return
-        print(f"Имя: {user[1]}\nЗаблокирован: {bool(user[2])}\nПодписка до: {user[3]}\nРежим: {user[4]}")
-        cursor.execute("""
-            SELECT s.name, us.end_date FROM user_services us
-            JOIN services s ON us.service_id = s.id
-            WHERE us.user_id = ?
-        """, (user[0],))
-        for row in cursor.fetchall():
-            print(f"  - {row[0]} до {row[1]}")
+        for row in conn.execute("SELECT id, name FROM services"):
+            print(f"{row[0]}. {row[1]}")
 
+def user_menu(user: User):
+    while True:
+        print(f"\nРабота с: {user.name} ({user.login})")
+        print("1 - Информация")
+        print("2 - Сменить пароль")
+        print("3 - Блокировка")
+        print("4 - Добавить услугу")
+        print("5 - Удалить услугу")
+        print("0 - Назад")
 
-def list_services():
-    with sqlite3.connect(DB_NAME) as conn:
-        cursor = conn.cursor()
-        for row in cursor.execute("SELECT id, name, type, cost, period_days FROM services"):
-            typ = "Платная" if row[2] else "Бесплатная"
-            print(f"{row[0]}. {row[1]} — {typ}, {row[3]} руб., {row[4]} дней")
+        match input("Выбор: "):
+            case "1":
+                user.get_info()
+            case "2":
+                user.change_password()
+            case "3":
+                block = input("Заблокировать (1) или разблокировать (0)? ")
+                user.block_user(bool(int(block)))
+            case "4":
+                list_all_services()
+                sid = int(input("ID услуги: "))
+                user.add_service(sid)
+            case "5":
+                list_all_services()
+                sid = int(input("ID услуги: "))
+                user.remove_service(sid)
+            case "0":
+                break
+            case _:
+                print("Неверный выбор.")
 
-
-def users_with_service():
-    service_id = input("Введите ID услуги: ")
-    with sqlite3.connect(DB_NAME) as conn:
-        cursor = conn.cursor()
-        cursor.execute("""
-            SELECT u.name, u.login FROM users u
-            JOIN user_services us ON u.id = us.user_id
-            WHERE us.service_id = ?
-        """, (service_id,))
-        for row in cursor.fetchall():
-            print(f"{row[0]} ({row[1]})")
-
-
-def expired_services():
-    one_month_ago = (datetime.now() - timedelta(days=30)).strftime("%Y-%m-%d")
-    with sqlite3.connect(DB_NAME) as conn:
-        cursor = conn.cursor()
-        cursor.execute("""
-            SELECT DISTINCT u.name, u.login FROM users u
-            JOIN user_services us ON u.id = us.user_id
-            WHERE us.end_date < ?
-        """, (one_month_ago,))
-        for row in cursor.fetchall():
-            print(f"{row[0]} ({row[1]})")
 
 
 if __name__ == "__main__":
     init_db()
+    create_test_data()
     main_menu()
+
